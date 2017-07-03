@@ -1,7 +1,7 @@
 """
 -getKills() bug with queen ~270 
+-Иногда фигуры противника не ходят
 """
-import numpy as np 
 
 def copy(matrix):
 	"""Make copy of matrix"""
@@ -16,8 +16,8 @@ def sign(x):
 class Game:
 	def __init__(self):
 		self.board = [[0 for _ in range(8)] for _ in range(8)]
-	    
-		self.depth = 3
+
+		self.depth = 1
 		self.up_moves = [(-1, 1), (-1, -1)]
 		self.down_moves = [(1, 1), (1, -1)] 
 		self.two_moves = [(2, 2), (2, -2), (-2, 2), (-2, -2)]
@@ -89,11 +89,13 @@ class Game:
 	def minimax(self, alpha, beta, board, depth, player):
 		""" Universl minimax for both player, return value of bestBoard"""
 		self.cnt += 1
-		if depth <= 0:
+		if depth == 0:
 			best_move = self.countHeuristic(board)
 			return best_move
 
+		sign = -1 
 		all_moves = self.getChildrens(board, player)
+		
 		if all_moves:
 			for move in all_moves:
 				if player == self.player:
@@ -103,7 +105,7 @@ class Game:
 					best_move = max(best_move, value)
 					alpha = max(alpha, best_move)
 					
-					if beta < alpha:
+					if beta <= alpha:
 						return best_move
 		
 				elif player == self.ai:
@@ -113,7 +115,7 @@ class Game:
 					best_move = min(best_move, value)
 					beta = min(beta, best_move)
 
-					if beta < alpha:
+					if beta <= alpha:
 						return best_move
 
 			return best_move
@@ -268,22 +270,28 @@ class Game:
 
 					if board[n_i][n_j] == 0 and board[e_i][e_j] != 0\
 					and board[e_i][e_j].lower() != board[i][j].lower():
-						new_board = copy(board)
-						
-						new_board[e_i][e_j] = 0
-						new_board[i][j], new_board[n_i][n_j] = new_board[n_i][n_j], new_board[i][j]
-						
-						if n_i == 0 and new_board[n_i][n_j] == self.player[0]:
-							new_board[n_i][n_j] = self.player[1]
-						elif n_i == 7 and new_board[n_i][n_j] == self.ai[0]:
-							new_board[n_i][n_j] = self.ai[1]
-
-						kills += [new_board]
-
-						complicated_kills = self.getKills(new_board, n_i, n_j)
-						if complicated_kills:
-							kills += complicated_kills
+						while self.isOnBoard(n_i, n_j) and board[n_i][n_j] == 0:
+							new_board = copy(board)
 							
+							new_board[e_i][e_j] = 0
+							new_board[i][j], new_board[n_i][n_j] = new_board[n_i][n_j], new_board[i][j]
+							
+							if n_i == 0 and new_board[n_i][n_j] == self.player[0]:
+								new_board[n_i][n_j] = self.player[1]
+							elif n_i == 7 and new_board[n_i][n_j] == self.ai[0]:
+								new_board[n_i][n_j] = self.ai[1]
+
+							kills += [new_board]
+
+							complicated_kills = self.getKills(new_board, n_i, n_j)
+							if complicated_kills:
+								kills += complicated_kills
+
+							if new_board[n_i][n_j] in ("w", "b"):
+								break
+
+							n_i, n_j = n_i + d_i, n_j + d_j
+
 						break
 						
 		return kills
